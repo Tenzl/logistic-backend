@@ -54,11 +54,14 @@ yarn-error.log*
 package-lock.json
 
 # Application config (sensitive)
-application-debug.properties
-application-production.properties
+src/main/resources/application-debug.properties
+src/main/resources/application-production.properties
+src/main/resources/application-*.properties
+!src/main/resources/application.properties
 
 # Uploads
 uploads/
+/uploads/
 
 # Certificates
 *.pem
