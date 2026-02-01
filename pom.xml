@@ -104,6 +104,12 @@
 		<artifactId>owasp-java-html-sanitizer</artifactId>
 		<version>20220608.1</version>
 	</dependency>
+	<!-- Guava is required by the HTML Sanitizer (Function, etc.) -->
+	<dependency>
+		<groupId>com.google.guava</groupId>
+		<artifactId>guava</artifactId>
+		<version>33.2.1-jre</version>
+	</dependency>
 	</dependencies>
 
 	<build>
