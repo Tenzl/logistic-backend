@@ -3,6 +3,7 @@ package com.example.seatrans.features.ports.controller;
 import com.example.seatrans.shared.dto.ApiResponse;
 import com.example.seatrans.features.ports.dto.PortDTO;
 import com.example.seatrans.features.ports.dto.CreatePortRequest;
+import com.example.seatrans.features.ports.dto.UpdatePortHasInfoRequest;
 import com.example.seatrans.features.ports.service.PortService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -116,6 +117,26 @@ public class PortController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Error updating port"));
+        }
+    }
+
+    @PatchMapping("/{id}/has-info")
+    public ResponseEntity<ApiResponse<PortDTO>> updateHasInfo(@PathVariable Long id, @RequestBody UpdatePortHasInfoRequest request) {
+        try {
+            if (request == null || request.getHasInfo() == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.error("hasInfo is required"));
+            }
+
+            PortDTO port = portService.updateHasInfo(id, request.getHasInfo());
+            if (port == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse.error("Port not found"));
+            }
+            return ResponseEntity.ok(ApiResponse.success("Port hasInfo updated successfully", port));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Error updating port hasInfo"));
         }
     }
 
