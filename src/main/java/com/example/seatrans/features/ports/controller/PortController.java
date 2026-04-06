@@ -1,16 +1,30 @@
 package com.example.seatrans.features.ports.controller;
 
-import com.example.seatrans.shared.dto.ApiResponse;
-import com.example.seatrans.features.ports.dto.PortDTO;
-import com.example.seatrans.features.ports.dto.CreatePortRequest;
-import com.example.seatrans.features.ports.dto.UpdatePortHasInfoRequest;
-import com.example.seatrans.features.ports.service.PortService;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
+import com.example.seatrans.features.ports.dto.CreatePortRequest;
+import com.example.seatrans.features.ports.dto.PortDTO;
+import com.example.seatrans.features.ports.dto.PortImportResultDTO;
+import com.example.seatrans.features.ports.dto.UpdatePortHasInfoRequest;
+import com.example.seatrans.features.ports.service.PortImportService;
+import com.example.seatrans.features.ports.service.PortService;
+import com.example.seatrans.shared.dto.ApiResponse;
 
 @RestController
 @RequestMapping("/api/v1/ports")
@@ -18,6 +32,9 @@ public class PortController {
 
     @Autowired
     private PortService portService;
+
+    @Autowired
+    private PortImportService portImportService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<PortDTO>>> getAllPorts() {
@@ -137,6 +154,35 @@ public class PortController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Error updating port hasInfo"));
+        }
+    }
+
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<PortImportResultDTO>> importPorts(
+            @RequestParam("file") MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error("No file provided"));
+        }
+
+        String filename = file.getOriginalFilename() != null ? file.getOriginalFilename().toLowerCase() : "";
+        if (!filename.endsWith(".csv") && !filename.endsWith(".xlsx") && !filename.endsWith(".xls")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error("Unsupported file format. Only .csv, .xlsx, .xls are accepted."));
+        }
+
+        try {
+            PortImportResultDTO result = portImportService.importFile(file);
+            String message = String.format(
+                    "Import completed: %d imported, %d duplicates, %d skipped, %d failed",
+                    result.getImported(), result.getDuplicates(), result.getSkipped(), result.getFailed());
+            return ResponseEntity.ok(ApiResponse.success(message, result));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Error processing import file: " + e.getMessage()));
         }
     }
 
